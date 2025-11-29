@@ -1,0 +1,28 @@
+{
+  "name": "mytsfy",
+  "version": "0.1.0",
+  "description": "O gerador de tsconfig.json moderno que a comunidade JS merece.",
+  "main": "index.js",
+  "bin": {
+    "mytsfy": "./index.js"
+  },
+  "scripts": {
+    "start": "node index.js"
+  },
+  "keywords": [
+    "typescript",
+    "tsconfig",
+    "vite",
+    "generator",
+    "cli"
+  ],
+  "author": "",
+  "license": "MIT",
+  "engines": {
+    "node": ">=14.0.0"
+  },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/suissa/mytsfy"
+  }
+}
