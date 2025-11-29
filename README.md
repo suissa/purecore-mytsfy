@@ -7,7 +7,7 @@
 <p align="center">
   <img src="https://img.shields.io/npm/v/mytsfy?style=flat-square&color=blue" alt="npm version">
   <img src="https://img.shields.io/npm/dm/mytsfy?style=flat-square&color=green" alt="downloads">
-  <img src="https://img.shields.io/github/license/purecore/mytsfy?style=flat-square&color=orange" alt="license">
+  <img src="https://img.shields.io/github/license/suissa/purecore-mytsfy?style=flat-square&color=orange" alt="license">
 </p>
 
 ---
