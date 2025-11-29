@@ -1,63 +1,10 @@
-MyTSFy ⚡
-
-Pare de copiar e colar configs velhas do StackOverflow.
-
-O MyTSFy gera arquivos tsconfig.json modernos e otimizados para as stacks atuais (Vite, Next.js, Node 20+).
-
-🚀 Uso Rápido
-
-Não precisa instalar nada! Basta rodar:
-
-npx mytsfy vite
-
-
-Ou para outros ambientes:
-
-npx mytsfy node
-npx mytsfy next
-
-
-📦 Instalação Global (Opcional)
-
-Se preferir ter o comando sempre à mão:
-
-npm install -g mytsfy
-
-
-Agora você pode usar apenas:
-
-mytsfy vite
-
-
-🛠 Presets Disponíveis
-
-Preset
-
-Comando
-
-Descrição
-
-Vite
-
-mytsfy vite
-
-Otimizado para Bundlers (Vite/Rollup), React, Vue, Svelte. Usa moduleResolution: bundler.
-
-Node
-
-mytsfy node
-
-Backend moderno. Usa NodeNext para suporte total a ESM e CJS.
-
-Next
-
-mytsfy next
-
-Configuração "chata" e específica exigida pelo Next.js.
-
-🌐 Web & Docs
-
-Acesse a nossa landing page interativa (que também gera o código para você copiar):
-[Link para o seu GitHub Pages será colocado aqui]
-
+MyTSFy ⚡Pare de copiar e colar configs velhas do StackOverflow.O MyTSFy gera arquivos tsconfig.json modernos e otimizados para as stacks atuais (Vite, Next.js, Node 20+).🚀 Uso Rápido (Sem Instalar)npx mytsfy vite
+Opções ExtrasGerar package.json automático:Adicione a flag -y para rodar npm init -y logo após criar o config.npx mytsfy node -y
+Ativar Decorators (Experimental):Essencial para frameworks que usam injeção de dependência (NestJS) ou ORMs (TypeORM).npx mytsfy node --experimental
+Isso adiciona experimentalDecorators: true e emitDecoratorMetadata: true.📦 Instalação Global (Opcional)Se preferir ter o comando sempre à mão:npm install -g mytsfy
+🧠 Por Dentro dos Presets (Deep Dive)Entenda as escolhas técnicas feitas por cada preset.1. Preset vite (Arquitetura Multi-Arquivo)O Vite moderno exige que você separe o código que roda no navegador do código que roda no Node (arquivos de config).tsconfig.json: Apenas um orquestrador. Não tem regras, só aponta para os outros arquivos.tsconfig.app.json (Seu código Frontend):"lib": ["DOM"]: Permite usar window, document, etc."moduleResolution": "bundler": O novo padrão do TypeScript 5.0+. Diz ao TS que um bundler (Vite/Rollup) vai resolver os imports, permitindo coisas que o Node não permite nativamente."noEmit": true: O TS não gera arquivos JS. Quem faz a transpilação é o Vite (usando esbuild/rollup). O TS serve apenas para checagem de erros.tsconfig.node.json (Configurações do Build):"include": ["vite.config.ts"]: Aplica regras apenas aos arquivos de configuração.Sem lib DOM: Previne que você use variáveis globais do browser (como window) dentro do arquivo de configuração do servidor, o que causaria erro de build.2. Preset node (Backend Moderno)Focado em Node.js versões 18 ou superior."module": "NodeNext" & "moduleResolution": "NodeNext":A configuração mais importante. Ela habilita o suporte nativo do Node para ES Modules (import/export) e CommonJS (require) simultaneamente. O TS vai olhar a extensão do arquivo (.mts, .cts, .mjs) ou o package.json para decidir como compilar."outDir": "./dist":Organização básica. Joga todo o código compilado para uma pasta separada, facilitando o deploy."strict": true":Habilita noImplicitAny, strictNullChecks, etc. Essencial para não ter erros de "undefined" em produção.3. Preset next (The Framework Way)O Next.js é "chato" e exige configurações muito específicas. O MyTSFy segue a recomendação oficial."target": "es5":Parece antigo, mas é proposital. O compilador do Next (SWC) assume a responsabilidade de modernizar o código depois. O TS só precisa garantir compatibilidade básica."jsx": "preserve":O TypeScript não transforma o JSX em JS. Ele deixa o JSX como está, para que o SWC/Babel façam essa transformação de forma otimizada depois."plugins": [{ "name": "next" }]:Habilita melhorias de intellisense específicas do Next.js no VS Code."incremental": true:Cria um arquivo de cache (.tsbuildinfo). Isso faz com que o comando next build seja muito mais rápido nas execuções seguintes, pois ele só recompila o que mudou.🧪 Decorators (Flag --experimental)Útil para quem usa NestJS, TypeORM ou Angular.Habilita:experimentalDecorators: Permite usar @Decorator em classes.emitDecoratorMetadata: Emite metadados sobre os tipos das propriedades, permitindo que frameworks façam injeção de dependência baseada em tipos.Exemplo NestJS:@Controller('cats')
+export class CatsController {
+  // O TS emite metadata dizendo que 'service' é do tipo 'CatsService'
+  constructor(private readonly service: CatsService) {}
+}
 Feito para salvar seu tempo. MIT License.
