@@ -1,0 +1,485 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>MyTSFy: Otimização de Configurações TypeScript</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;700&family=JetBrains+Mono:wght@400;700&display=swap');
+        
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: #f5f5f4; /* Warm neutral: stone-100 */
+            color: #1c1917; /* stone-900 */
+        }
+        
+        .font-mono {
+            font-family: 'JetBrains Mono', monospace;
+        }
+
+        /* CHART CONTAINER STYLING (MANDATORY) */
+        .chart-container {
+            position: relative;
+            width: 100%;
+            max-width: 600px; /* Max width to prevent excessive stretching */
+            margin-left: auto;
+            margin-right: auto;
+            height: 350px; /* Base height */
+            max-height: 400px;
+        }
+        
+        @media (min-width: 768px) {
+            .chart-container {
+                height: 400px;
+            }
+        }
+
+        /* Custom Scrollbar for code blocks */
+        .custom-scroll::-webkit-scrollbar {
+            width: 8px;
+            height: 8px;
+        }
+        .custom-scroll::-webkit-scrollbar-track {
+            background: #292524; 
+        }
+        .custom-scroll::-webkit-scrollbar-thumb {
+            background: #57534e; 
+            border-radius: 4px;
+        }
+        .custom-scroll::-webkit-scrollbar-thumb:hover {
+            background: #78716c; 
+        }
+
+        .active-tab {
+            background-color: #ea580c; /* orange-600 */
+            color: white;
+            border-color: #ea580c;
+        }
+        
+        .inactive-tab {
+            background-color: white;
+            color: #44403c;
+            border-color: #d6d3d1;
+        }
+        .inactive-tab:hover {
+            background-color: #f5f5f4;
+        }
+    </style>
+    <!-- Chosen Palette: Warm Neutrals (Stone) with Orange Accents for energy/action -->
+    <!-- Application Structure Plan: 
+         1. Introduction: Contextualizes MyTSFy not just as a tool, but as a solution to "Config Fatigue".
+         2. Interactive Dashboard (The Core): A split view. Left side allows preset selection (Vite, Node, Next). Right side visualizes the "Profile" of that configuration using a Radar Chart (showing dimensions like Browser Compat, Node Compat, Strictness) and displays the actual code.
+         3. Comparative Analysis: A section allowing users to toggle between 'Standard' and 'Global' installation methods to see the command impact.
+         4. Rationale: Why structure? Users need to understand *why* a preset differs (e.g., why Node uses NodeNext vs Vite using Bundler). The chart bridges the gap between abstract text configs and concrete capabilities.
+    -->
+    <!-- Visualization & Content Choices:
+         1. Config Profile Radar (Chart.js): Goal: Compare. Method: Radar Chart. Interaction: Updates on preset click. Justification: Shows the multi-dimensional nature of TS configs (DOM vs Node environment) better than text.
+         2. Dynamic Code Block: Goal: Inform. Method: HTML/JS text update. Interaction: Updates on preset click. Justification: Users need to see the actual JSON output.
+         3. Command Builder: Goal: Action. Method: Buttons/Toggles. Interaction: Updates the command string. Justification: Simplifies the user journey from understanding to execution.
+         Confirming NO SVG graphics used. NO Mermaid JS used.
+    -->
+    <!-- CONFIRMATION: NO SVG graphics used. NO Mermaid JS used. -->
+</head>
+<body class="min-h-screen flex flex-col">
+
+    <!-- Header Section -->
+    <header class="bg-white border-b border-stone-200 py-6 px-4 md:px-8 shadow-sm">
+        <div class="max-w-7xl mx-auto flex flex-col md:flex-row justify-between items-center">
+            <div class="mb-4 md:mb-0 text-center md:text-left">
+                <h1 class="text-3xl font-bold text-stone-900 tracking-tight">MyTSFy <span class="text-orange-600">⚡</span></h1>
+                <p class="text-stone-500 text-sm mt-1">Gerador Inteligente de Configurações TypeScript</p>
+            </div>
+            <div class="flex gap-4">
+                <a href="#" class="text-stone-600 hover:text-orange-600 font-medium transition">Documentação</a>
+                <a href="#" class="text-stone-600 hover:text-orange-600 font-medium transition">GitHub</a>
+            </div>
+        </div>
+    </header>
+
+    <!-- Main Content -->
+    <main class="flex-grow max-w-7xl mx-auto w-full p-4 md:p-8 space-y-12">
+
+        <!-- Introduction -->
+        <section class="max-w-3xl mx-auto text-center space-y-4">
+            <h2 class="text-2xl md:text-4xl font-bold text-stone-800">Pare de copiar configs antigas.</h2>
+            <p class="text-lg text-stone-600 leading-relaxed">
+                O ecossistema JavaScript muda rápido. O <strong>MyTSFy</strong> elimina a "fadiga de configuração" gerando arquivos <code>tsconfig.json</code> otimizados e modernos para as stacks atuais (Vite, Next.js, Node 20+). Explore abaixo como cada preset adapta o TypeScript para seu ambiente específico.
+            </p>
+        </section>
+
+        <!-- Interactive Dashboard: Preset Explorer -->
+        <section class="bg-white rounded-2xl shadow-lg border border-stone-200 overflow-hidden">
+            <div class="grid grid-cols-1 lg:grid-cols-3 min-h-[600px]">
+                
+                <!-- Left Column: Controls & Context -->
+                <div class="p-6 md:p-8 bg-stone-50 border-r border-stone-200 flex flex-col gap-6">
+                    <div>
+                        <h3 class="text-xl font-bold text-stone-800 mb-2">Escolha seu Ambiente</h3>
+                        <p class="text-sm text-stone-500 mb-4">Selecione um preset para ver como o MyTSFy otimiza o compilador.</p>
+                        
+                        <div class="flex flex-col gap-3" id="presetButtons">
+                            <!-- Buttons generated by JS -->
+                        </div>
+                    </div>
+
+                    <div class="mt-auto">
+                        <div class="bg-orange-50 border border-orange-100 p-4 rounded-lg">
+                            <h4 class="font-bold text-orange-800 text-sm mb-1">Destaque do Preset</h4>
+                            <p id="presetDescription" class="text-stone-700 text-sm">
+                                <!-- Dynamic Description -->
+                            </p>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Middle Column: Data Visualization -->
+                <div class="p-6 md:p-8 flex flex-col justify-center items-center border-b lg:border-b-0 lg:border-r border-stone-200">
+                    <h3 class="text-lg font-bold text-stone-800 mb-4 w-full text-center">Perfil de Configuração</h3>
+                    <p class="text-xs text-stone-500 mb-6 text-center max-w-xs">Visualização das prioridades do compilador para o ambiente selecionado.</p>
+                    
+                    <!-- CHART CONTAINER -->
+                    <div class="chart-container">
+                        <canvas id="configRadarChart"></canvas>
+                    </div>
+                    
+                    <div class="mt-6 grid grid-cols-2 gap-4 w-full text-xs text-stone-500">
+                        <div class="text-center"><span class="font-bold text-stone-800">DOM:</span> Acesso a window/document</div>
+                        <div class="text-center"><span class="font-bold text-stone-800">Node:</span> Acesso a process/fs</div>
+                    </div>
+                </div>
+
+                <!-- Right Column: Code Preview -->
+                <div class="bg-stone-900 p-6 md:p-8 text-stone-100 flex flex-col overflow-hidden">
+                    <div class="flex justify-between items-center mb-4">
+                        <h3 class="text-sm font-bold text-stone-300 uppercase tracking-wider">tsconfig.json Gerado</h3>
+                        <span class="text-xs text-stone-500 font-mono">read-only</span>
+                    </div>
+                    <div class="flex-grow relative overflow-hidden rounded-lg border border-stone-700 bg-stone-950">
+                        <pre class="absolute inset-0 p-4 overflow-auto custom-scroll font-mono text-sm leading-relaxed" id="codePreview">
+<!-- Code will be injected here -->
+                        </pre>
+                    </div>
+                    <div class="mt-4 text-center">
+                        <p class="text-xs text-stone-400">Este arquivo é gerado automaticamente pelo CLI.</p>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- Command Generator Section -->
+        <section class="grid grid-cols-1 md:grid-cols-2 gap-8 items-center">
+            <div class="space-y-4">
+                <h3 class="text-2xl font-bold text-stone-800">Pronto para usar?</h3>
+                <p class="text-stone-600">
+                    O MyTSFy é flexível. Você pode rodá-lo uma única vez com <code>npx</code> ou instalar globalmente para ter o comando sempre à mão em qualquer projeto.
+                </p>
+                
+                <div class="flex items-center gap-4 bg-white p-2 rounded-lg border border-stone-200 w-fit">
+                    <button id="btnNpx" class="px-4 py-2 rounded-md text-sm font-bold transition active-tab">Uso Único (npx)</button>
+                    <button id="btnGlobal" class="px-4 py-2 rounded-md text-sm font-bold transition inactive-tab">Instalação Global</button>
+                </div>
+            </div>
+
+            <div class="bg-stone-800 text-white p-6 rounded-xl shadow-lg font-mono relative group cursor-pointer" onclick="copyCommand()">
+                <div class="absolute top-4 right-4 text-xs text-stone-400 group-hover:text-white transition">Clique para copiar 📋</div>
+                <div class="space-y-2">
+                    <p class="text-stone-400 text-sm mb-2" id="cmdLabel"># Rode sem instalar nada:</p>
+                    <p class="text-xl md:text-2xl font-bold text-orange-400" id="finalCommand">npx mytsfy vite</p>
+                </div>
+            </div>
+        </section>
+
+        <!-- Comparison Table (Analysis) -->
+        <section class="bg-white rounded-xl border border-stone-200 p-6 md:p-8">
+            <h3 class="text-xl font-bold text-stone-800 mb-6">Comparativo de Presets</h3>
+            <div class="overflow-x-auto">
+                <table class="w-full text-left text-sm text-stone-600">
+                    <thead class="bg-stone-50 text-stone-800 uppercase text-xs">
+                        <tr>
+                            <th class="px-4 py-3 rounded-l-lg">Preset</th>
+                            <th class="px-4 py-3">Module Resolution</th>
+                            <th class="px-4 py-3">Ambiente Alvo</th>
+                            <th class="px-4 py-3 rounded-r-lg">Melhor Para</th>
+                        </tr>
+                    </thead>
+                    <tbody class="divide-y divide-stone-100">
+                        <tr class="hover:bg-stone-50 transition">
+                            <td class="px-4 py-3 font-bold text-stone-900">Vite</td>
+                            <td class="px-4 py-3"><code class="bg-stone-100 px-1 rounded text-orange-600">bundler</code></td>
+                            <td class="px-4 py-3">Browser (ES2020+)</td>
+                            <td class="px-4 py-3">React, Vue, Svelte, Lit</td>
+                        </tr>
+                        <tr class="hover:bg-stone-50 transition">
+                            <td class="px-4 py-3 font-bold text-stone-900">Node</td>
+                            <td class="px-4 py-3"><code class="bg-stone-100 px-1 rounded text-blue-600">NodeNext</code></td>
+                            <td class="px-4 py-3">Node.js 18+</td>
+                            <td class="px-4 py-3">APIs, Scripts, CLIs, Backend</td>
+                        </tr>
+                        <tr class="hover:bg-stone-50 transition">
+                            <td class="px-4 py-3 font-bold text-stone-900">Next</td>
+                            <td class="px-4 py-3"><code class="bg-stone-100 px-1 rounded text-purple-600">node</code></td>
+                            <td class="px-4 py-3">Híbrido (Server/Client)</td>
+                            <td class="px-4 py-3">Aplicações Next.js</td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+        </section>
+
+    </main>
+
+    <footer class="bg-stone-100 border-t border-stone-200 mt-12 py-8">
+        <div class="max-w-7xl mx-auto px-4 text-center text-stone-500 text-sm">
+            <p>MyTSFy &copy; 2024. Licença MIT.</p>
+            <p class="mt-2">Feito para salvar seu tempo.</p>
+        </div>
+    </footer>
+
+    <!-- JavaScript Logic -->
+    <script>
+        // --- DATA STORE ---
+        const presets = {
+            vite: {
+                name: "Vite",
+                icon: "⚡",
+                desc: "Otimizado para bundlers modernos. Usa 'moduleResolution: bundler', ideal para React, Vue e Svelte. Foca em compatibilidade com Browser e ignora tipos de Node globais para segurança.",
+                color: "rgba(234, 88, 12, 1)", // Orange
+                bg: "rgba(234, 88, 12, 0.2)",
+                stats: [95, 20, 90, 100, 80], // [Browser, Node, Strictness, Modernity, Specificity]
+                json: {
+                    compilerOptions: {
+                        target: "ES2020",
+                        useDefineForClassFields: true,
+                        lib: ["ES2020", "DOM", "DOM.Iterable"],
+                        module: "ESNext",
+                        skipLibCheck: true,
+                        moduleResolution: "bundler",
+                        allowImportingTsExtensions: true,
+                        resolveJsonModule: true,
+                        isolatedModules: true,
+                        noEmit: true,
+                        jsx: "react-jsx",
+                        strict: true
+                    },
+                    include: ["src"],
+                    references: [{ path: "./tsconfig.node.json" }]
+                }
+            },
+            node: {
+                name: "Node",
+                icon: "📦",
+                desc: "Configuração robusta para Backends. Usa 'NodeNext' para suporte total a ESM e CommonJS simultaneamente. Habilita checagens estritas e output para pasta dist.",
+                color: "rgba(37, 99, 235, 1)", // Blue
+                bg: "rgba(37, 99, 235, 0.2)",
+                stats: [10, 100, 95, 90, 60],
+                json: {
+                    compilerOptions: {
+                        target: "ES2022",
+                        module: "NodeNext",
+                        moduleResolution: "NodeNext",
+                        lib: ["ES2022"],
+                        outDir: "./dist",
+                        rootDir: "./src",
+                        strict: true,
+                        noImplicitAny: true,
+                        esModuleInterop: true
+                    },
+                    include: ["src/**/*"],
+                    exclude: ["node_modules"]
+                }
+            },
+            next: {
+                name: "Next",
+                icon: "🛠️",
+                desc: "O padrão chato e específico do Next.js. Preserva JSX para o SWC compilar, habilita plugins do framework e incremental builds para velocidade.",
+                color: "rgba(147, 51, 234, 1)", // Purple
+                bg: "rgba(147, 51, 234, 0.2)",
+                stats: [80, 80, 85, 85, 100],
+                json: {
+                    compilerOptions: {
+                        target: "es5",
+                        lib: ["dom", "dom.iterable", "esnext"],
+                        allowJs: true,
+                        skipLibCheck: true,
+                        strict: true,
+                        noEmit: true,
+                        esModuleInterop: true,
+                        module: "esnext",
+                        moduleResolution: "node",
+                        resolveJsonModule: true,
+                        isolatedModules: true,
+                        jsx: "preserve",
+                        incremental: true,
+                        plugins: [{ name: "next" }]
+                    },
+                    include: ["next-env.d.ts", "**/*.ts", "**/*.tsx"],
+                    exclude: ["node_modules"]
+                }
+            }
+        };
+
+        // --- STATE ---
+        let currentPreset = 'vite';
+        let isGlobal = false;
+        let radarChart = null;
+
+        // --- DOM ELEMENTS ---
+        const btnContainer = document.getElementById('presetButtons');
+        const codePreview = document.getElementById('codePreview');
+        const descEl = document.getElementById('presetDescription');
+        const finalCmdEl = document.getElementById('finalCommand');
+        const cmdLabelEl = document.getElementById('cmdLabel');
+        const btnNpx = document.getElementById('btnNpx');
+        const btnGlobal = document.getElementById('btnGlobal');
+
+        // --- INITIALIZATION ---
+        function init() {
+            renderButtons();
+            initChart();
+            updateUI();
+
+            // Setup Command Toggle Listeners
+            btnNpx.addEventListener('click', () => {
+                isGlobal = false;
+                btnNpx.className = "px-4 py-2 rounded-md text-sm font-bold transition active-tab";
+                btnGlobal.className = "px-4 py-2 rounded-md text-sm font-bold transition inactive-tab";
+                updateCommand();
+            });
+
+            btnGlobal.addEventListener('click', () => {
+                isGlobal = true;
+                btnGlobal.className = "px-4 py-2 rounded-md text-sm font-bold transition active-tab";
+                btnNpx.className = "px-4 py-2 rounded-md text-sm font-bold transition inactive-tab";
+                updateCommand();
+            });
+        }
+
+        // --- CHART LOGIC ---
+        function initChart() {
+            const ctx = document.getElementById('configRadarChart').getContext('2d');
+            radarChart = new Chart(ctx, {
+                type: 'radar',
+                data: {
+                    labels: ['Browser Compat', 'Node Compat', 'Estrito (Strict)', 'Modernidade', 'Especificidade'],
+                    datasets: [{
+                        label: 'Perfil do Preset',
+                        data: presets[currentPreset].stats,
+                        fill: true,
+                        backgroundColor: presets[currentPreset].bg,
+                        borderColor: presets[currentPreset].color,
+                        pointBackgroundColor: presets[currentPreset].color,
+                        pointBorderColor: '#fff',
+                        pointHoverBackgroundColor: '#fff',
+                        pointHoverBorderColor: presets[currentPreset].color
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false, // Critical for container responsiveness
+                    elements: {
+                        line: { borderWidth: 3 }
+                    },
+                    scales: {
+                        r: {
+                            angleLines: { color: '#e7e5e4' },
+                            grid: { color: '#e7e5e4' },
+                            pointLabels: {
+                                font: { size: 11, family: 'Inter' },
+                                color: '#57534e'
+                            },
+                            suggestedMin: 0,
+                            suggestedMax: 100,
+                            ticks: { display: false } // Hide numbers for cleaner look
+                        }
+                    },
+                    plugins: {
+                        legend: { display: false },
+                        tooltip: {
+                            backgroundColor: '#1c1917',
+                            titleFont: { family: 'Inter' },
+                            bodyFont: { family: 'Inter' }
+                        }
+                    }
+                }
+            });
+        }
+
+        // --- UI UPDATE LOGIC ---
+        function renderButtons() {
+            btnContainer.innerHTML = '';
+            Object.keys(presets).forEach(key => {
+                const p = presets[key];
+                const btn = document.createElement('button');
+                btn.className = `w-full text-left px-4 py-3 rounded-lg border transition flex items-center gap-3 ${
+                    key === currentPreset 
+                    ? 'border-orange-500 bg-orange-50 text-orange-900 ring-1 ring-orange-500' 
+                    : 'border-stone-200 bg-white text-stone-600 hover:bg-stone-50 hover:border-stone-300'
+                }`;
+                btn.onclick = () => setPreset(key);
+                btn.innerHTML = `
+                    <span class="text-xl">${p.icon}</span>
+                    <div>
+                        <div class="font-bold">${p.name}</div>
+                        <div class="text-xs opacity-70">Preset</div>
+                    </div>
+                `;
+                btnContainer.appendChild(btn);
+            });
+        }
+
+        function setPreset(key) {
+            currentPreset = key;
+            renderButtons();
+            updateUI();
+        }
+
+        function updateUI() {
+            const data = presets[currentPreset];
+            
+            // Update Description
+            descEl.textContent = data.desc;
+
+            // Update Code Block with syntax highlighting simulation (simple JSON)
+            codePreview.textContent = JSON.stringify(data.json, null, 2);
+
+            // Update Chart
+            radarChart.data.datasets[0].data = data.stats;
+            radarChart.data.datasets[0].label = `Perfil ${data.name}`;
+            radarChart.data.datasets[0].backgroundColor = data.bg;
+            radarChart.data.datasets[0].borderColor = data.color;
+            radarChart.data.datasets[0].pointBackgroundColor = data.color;
+            radarChart.data.datasets[0].pointHoverBorderColor = data.color;
+            radarChart.update();
+
+            updateCommand();
+        }
+
+        function updateCommand() {
+            if (isGlobal) {
+                cmdLabelEl.textContent = "# Com pacote global instalado:";
+                finalCmdEl.textContent = `mytsfy ${currentPreset}`;
+            } else {
+                cmdLabelEl.textContent = "# Rode sem instalar nada:";
+                finalCmdEl.textContent = `npx mytsfy ${currentPreset}`;
+            }
+        }
+
+        function copyCommand() {
+            const text = finalCmdEl.textContent;
+            navigator.clipboard.writeText(text).then(() => {
+                const original = finalCmdEl.textContent;
+                finalCmdEl.textContent = "Copiado! ✅";
+                setTimeout(() => {
+                    finalCmdEl.textContent = original;
+                }, 1500);
+            });
+        }
+
+        // Run
+        window.onload = init;
+
+    </script>
+</body>
+</html>

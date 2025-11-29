@@ -3,483 +3,219 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>MyTSFy: Otimização de Configurações TypeScript</title>
+    <title>MyTSFy - Configs TypeScript Sem Dor</title>
+    <script crossorigin src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
+    <script crossorigin src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
+    <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
     <script src="https://cdn.tailwindcss.com"></script>
-    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <style>
-        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;700&family=JetBrains+Mono:wght@400;700&display=swap');
+        @import url('https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;700&family=Inter:wght@400;600;800&display=swap');
+        body { font-family: 'Inter', sans-serif; background-color: #0f172a; color: #e2e8f0; }
+        .code-font { font-family: 'JetBrains Mono', monospace; }
+        .json-key { color: #38bdf8; }
+        .json-string { color: #a5f3fc; }
+        .json-bool { color: #f472b6; }
+        ::-webkit-scrollbar { width: 8px; }
+        ::-webkit-scrollbar-track { background: #1e293b; }
+        ::-webkit-scrollbar-thumb { background: #475569; border-radius: 4px; }
+        ::-webkit-scrollbar-thumb:hover { background: #64748b; }
         
-        body {
-            font-family: 'Inter', sans-serif;
-            background-color: #f5f5f4; /* Warm neutral: stone-100 */
-            color: #1c1917; /* stone-900 */
+        /* Toggle Switch Styles */
+        .toggle-checkbox:checked {
+            right: 0;
+            border-color: #3b82f6;
         }
-        
-        .font-mono {
-            font-family: 'JetBrains Mono', monospace;
-        }
-
-        /* CHART CONTAINER STYLING (MANDATORY) */
-        .chart-container {
-            position: relative;
-            width: 100%;
-            max-width: 600px; /* Max width to prevent excessive stretching */
-            margin-left: auto;
-            margin-right: auto;
-            height: 350px; /* Base height */
-            max-height: 400px;
-        }
-        
-        @media (min-width: 768px) {
-            .chart-container {
-                height: 400px;
-            }
-        }
-
-        /* Custom Scrollbar for code blocks */
-        .custom-scroll::-webkit-scrollbar {
-            width: 8px;
-            height: 8px;
-        }
-        .custom-scroll::-webkit-scrollbar-track {
-            background: #292524; 
-        }
-        .custom-scroll::-webkit-scrollbar-thumb {
-            background: #57534e; 
-            border-radius: 4px;
-        }
-        .custom-scroll::-webkit-scrollbar-thumb:hover {
-            background: #78716c; 
-        }
-
-        .active-tab {
-            background-color: #ea580c; /* orange-600 */
-            color: white;
-            border-color: #ea580c;
-        }
-        
-        .inactive-tab {
-            background-color: white;
-            color: #44403c;
-            border-color: #d6d3d1;
-        }
-        .inactive-tab:hover {
-            background-color: #f5f5f4;
+        .toggle-checkbox:checked + .toggle-label {
+            background-color: #3b82f6;
         }
     </style>
-    <!-- Chosen Palette: Warm Neutrals (Stone) with Orange Accents for energy/action -->
-    <!-- Application Structure Plan: 
-         1. Introduction: Contextualizes MyTSFy not just as a tool, but as a solution to "Config Fatigue".
-         2. Interactive Dashboard (The Core): A split view. Left side allows preset selection (Vite, Node, Next). Right side visualizes the "Profile" of that configuration using a Radar Chart (showing dimensions like Browser Compat, Node Compat, Strictness) and displays the actual code.
-         3. Comparative Analysis: A section allowing users to toggle between 'Standard' and 'Global' installation methods to see the command impact.
-         4. Rationale: Why structure? Users need to understand *why* a preset differs (e.g., why Node uses NodeNext vs Vite using Bundler). The chart bridges the gap between abstract text configs and concrete capabilities.
-    -->
-    <!-- Visualization & Content Choices:
-         1. Config Profile Radar (Chart.js): Goal: Compare. Method: Radar Chart. Interaction: Updates on preset click. Justification: Shows the multi-dimensional nature of TS configs (DOM vs Node environment) better than text.
-         2. Dynamic Code Block: Goal: Inform. Method: HTML/JS text update. Interaction: Updates on preset click. Justification: Users need to see the actual JSON output.
-         3. Command Builder: Goal: Action. Method: Buttons/Toggles. Interaction: Updates the command string. Justification: Simplifies the user journey from understanding to execution.
-         Confirming NO SVG graphics used. NO Mermaid JS used.
-    -->
-    <!-- CONFIRMATION: NO SVG graphics used. NO Mermaid JS used. -->
 </head>
-<body class="min-h-screen flex flex-col">
+<body>
+    <div id="root"></div>
+    <script type="text/babel">
+        const { useState, useEffect } = React;
+        const IconGlobe = () => <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="10"></circle><line x1="2" y1="12" x2="22" y2="12"></line><path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"></path></svg>;
+        const IconCpu = () => <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect x="4" y="4" width="16" height="16" rx="2" ry="2"></rect><rect x="9" y="9" width="6" height="6"></rect><line x1="9" y1="1" x2="9" y2="4"></line><line x1="15" y1="1" x2="15" y2="4"></line><line x1="9" y1="20" x2="9" y2="23"></line><line x1="15" y1="20" x2="15" y2="23"></line><line x1="20" y1="9" x2="23" y2="9"></line><line x1="20" y1="14" x2="23" y2="14"></line><line x1="1" y1="9" x2="4" y2="9"></line><line x1="1" y1="14" x2="4" y2="14"></line></svg>;
+        const IconLayers = () => <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polygon points="12 2 2 7 12 12 22 7 12 2"></polygon><polyline points="2 17 12 22 22 17"></polyline><polyline points="2 12 12 17 22 12"></polyline></svg>;
+        const IconInfo = () => <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="10"></circle><line x1="12" y1="16" x2="12" y2="12"></line><line x1="12" y1="8" x2="12.01" y2="8"></line></svg>;
+        const IconCopy = () => <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path></svg>;
+        const IconDownload = () => <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path><polyline points="7 10 12 15 17 10"></polyline><line x1="12" y1="15" x2="12" y2="3"></line></svg>;
+        const IconClipboard = () => <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M16 4h2a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h2"></path><rect x="8" y="2" width="8" height="4" rx="1" ry="1"></rect></svg>;
+        const IconBeaker = () => <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M4.5 3h15"></path><path d="M6 3v16a2 2 0 0 0 2 2h8a2 2 0 0 0 2-2V3"></path><path d="M6 14h12"></path></svg>;
 
-    <!-- Header Section -->
-    <header class="bg-white border-b border-stone-200 py-6 px-4 md:px-8 shadow-sm">
-        <div class="max-w-7xl mx-auto flex flex-col md:flex-row justify-between items-center">
-            <div class="mb-4 md:mb-0 text-center md:text-left">
-                <h1 class="text-3xl font-bold text-stone-900 tracking-tight">MyTSFy <span class="text-orange-600">⚡</span></h1>
-                <p class="text-stone-500 text-sm mt-1">Gerador Inteligente de Configurações TypeScript</p>
-            </div>
-            <div class="flex gap-4">
-                <a href="#" class="text-stone-600 hover:text-orange-600 font-medium transition">Documentação</a>
-                <a href="#" class="text-stone-600 hover:text-orange-600 font-medium transition">GitHub</a>
-            </div>
-        </div>
-    </header>
-
-    <!-- Main Content -->
-    <main class="flex-grow max-w-7xl mx-auto w-full p-4 md:p-8 space-y-12">
-
-        <!-- Introduction -->
-        <section class="max-w-3xl mx-auto text-center space-y-4">
-            <h2 class="text-2xl md:text-4xl font-bold text-stone-800">Pare de copiar configs antigas.</h2>
-            <p class="text-lg text-stone-600 leading-relaxed">
-                O ecossistema JavaScript muda rápido. O <strong>MyTSFy</strong> elimina a "fadiga de configuração" gerando arquivos <code>tsconfig.json</code> otimizados e modernos para as stacks atuais (Vite, Next.js, Node 20+). Explore abaixo como cada preset adapta o TypeScript para seu ambiente específico.
-            </p>
-        </section>
-
-        <!-- Interactive Dashboard: Preset Explorer -->
-        <section class="bg-white rounded-2xl shadow-lg border border-stone-200 overflow-hidden">
-            <div class="grid grid-cols-1 lg:grid-cols-3 min-h-[600px]">
-                
-                <!-- Left Column: Controls & Context -->
-                <div class="p-6 md:p-8 bg-stone-50 border-r border-stone-200 flex flex-col gap-6">
-                    <div>
-                        <h3 class="text-xl font-bold text-stone-800 mb-2">Escolha seu Ambiente</h3>
-                        <p class="text-sm text-stone-500 mb-4">Selecione um preset para ver como o MyTSFy otimiza o compilador.</p>
-                        
-                        <div class="flex flex-col gap-3" id="presetButtons">
-                            <!-- Buttons generated by JS -->
-                        </div>
-                    </div>
-
-                    <div class="mt-auto">
-                        <div class="bg-orange-50 border border-orange-100 p-4 rounded-lg">
-                            <h4 class="font-bold text-orange-800 text-sm mb-1">Destaque do Preset</h4>
-                            <p id="presetDescription" class="text-stone-700 text-sm">
-                                <!-- Dynamic Description -->
-                            </p>
-                        </div>
-                    </div>
-                </div>
-
-                <!-- Middle Column: Data Visualization -->
-                <div class="p-6 md:p-8 flex flex-col justify-center items-center border-b lg:border-b-0 lg:border-r border-stone-200">
-                    <h3 class="text-lg font-bold text-stone-800 mb-4 w-full text-center">Perfil de Configuração</h3>
-                    <p class="text-xs text-stone-500 mb-6 text-center max-w-xs">Visualização das prioridades do compilador para o ambiente selecionado.</p>
-                    
-                    <!-- CHART CONTAINER -->
-                    <div class="chart-container">
-                        <canvas id="configRadarChart"></canvas>
-                    </div>
-                    
-                    <div class="mt-6 grid grid-cols-2 gap-4 w-full text-xs text-stone-500">
-                        <div class="text-center"><span class="font-bold text-stone-800">DOM:</span> Acesso a window/document</div>
-                        <div class="text-center"><span class="font-bold text-stone-800">Node:</span> Acesso a process/fs</div>
-                    </div>
-                </div>
-
-                <!-- Right Column: Code Preview -->
-                <div class="bg-stone-900 p-6 md:p-8 text-stone-100 flex flex-col overflow-hidden">
-                    <div class="flex justify-between items-center mb-4">
-                        <h3 class="text-sm font-bold text-stone-300 uppercase tracking-wider">tsconfig.json Gerado</h3>
-                        <span class="text-xs text-stone-500 font-mono">read-only</span>
-                    </div>
-                    <div class="flex-grow relative overflow-hidden rounded-lg border border-stone-700 bg-stone-950">
-                        <pre class="absolute inset-0 p-4 overflow-auto custom-scroll font-mono text-sm leading-relaxed" id="codePreview">
-<!-- Code will be injected here -->
-                        </pre>
-                    </div>
-                    <div class="mt-4 text-center">
-                        <p class="text-xs text-stone-400">Este arquivo é gerado automaticamente pelo CLI.</p>
-                    </div>
-                </div>
-            </div>
-        </section>
-
-        <!-- Command Generator Section -->
-        <section class="grid grid-cols-1 md:grid-cols-2 gap-8 items-center">
-            <div class="space-y-4">
-                <h3 class="text-2xl font-bold text-stone-800">Pronto para usar?</h3>
-                <p class="text-stone-600">
-                    O MyTSFy é flexível. Você pode rodá-lo uma única vez com <code>npx</code> ou instalar globalmente para ter o comando sempre à mão em qualquer projeto.
-                </p>
-                
-                <div class="flex items-center gap-4 bg-white p-2 rounded-lg border border-stone-200 w-fit">
-                    <button id="btnNpx" class="px-4 py-2 rounded-md text-sm font-bold transition active-tab">Uso Único (npx)</button>
-                    <button id="btnGlobal" class="px-4 py-2 rounded-md text-sm font-bold transition inactive-tab">Instalação Global</button>
-                </div>
-            </div>
-
-            <div class="bg-stone-800 text-white p-6 rounded-xl shadow-lg font-mono relative group cursor-pointer" onclick="copyCommand()">
-                <div class="absolute top-4 right-4 text-xs text-stone-400 group-hover:text-white transition">Clique para copiar 📋</div>
-                <div class="space-y-2">
-                    <p class="text-stone-400 text-sm mb-2" id="cmdLabel"># Rode sem instalar nada:</p>
-                    <p class="text-xl md:text-2xl font-bold text-orange-400" id="finalCommand">npx mytsfy vite</p>
-                </div>
-            </div>
-        </section>
-
-        <!-- Comparison Table (Analysis) -->
-        <section class="bg-white rounded-xl border border-stone-200 p-6 md:p-8">
-            <h3 class="text-xl font-bold text-stone-800 mb-6">Comparativo de Presets</h3>
-            <div class="overflow-x-auto">
-                <table class="w-full text-left text-sm text-stone-600">
-                    <thead class="bg-stone-50 text-stone-800 uppercase text-xs">
-                        <tr>
-                            <th class="px-4 py-3 rounded-l-lg">Preset</th>
-                            <th class="px-4 py-3">Module Resolution</th>
-                            <th class="px-4 py-3">Ambiente Alvo</th>
-                            <th class="px-4 py-3 rounded-r-lg">Melhor Para</th>
-                        </tr>
-                    </thead>
-                    <tbody class="divide-y divide-stone-100">
-                        <tr class="hover:bg-stone-50 transition">
-                            <td class="px-4 py-3 font-bold text-stone-900">Vite</td>
-                            <td class="px-4 py-3"><code class="bg-stone-100 px-1 rounded text-orange-600">bundler</code></td>
-                            <td class="px-4 py-3">Browser (ES2020+)</td>
-                            <td class="px-4 py-3">React, Vue, Svelte, Lit</td>
-                        </tr>
-                        <tr class="hover:bg-stone-50 transition">
-                            <td class="px-4 py-3 font-bold text-stone-900">Node</td>
-                            <td class="px-4 py-3"><code class="bg-stone-100 px-1 rounded text-blue-600">NodeNext</code></td>
-                            <td class="px-4 py-3">Node.js 18+</td>
-                            <td class="px-4 py-3">APIs, Scripts, CLIs, Backend</td>
-                        </tr>
-                        <tr class="hover:bg-stone-50 transition">
-                            <td class="px-4 py-3 font-bold text-stone-900">Next</td>
-                            <td class="px-4 py-3"><code class="bg-stone-100 px-1 rounded text-purple-600">node</code></td>
-                            <td class="px-4 py-3">Híbrido (Server/Client)</td>
-                            <td class="px-4 py-3">Aplicações Next.js</td>
-                        </tr>
-                    </tbody>
-                </table>
-            </div>
-        </section>
-
-    </main>
-
-    <footer class="bg-stone-100 border-t border-stone-200 mt-12 py-8">
-        <div class="max-w-7xl mx-auto px-4 text-center text-stone-500 text-sm">
-            <p>MyTSFy &copy; 2024. Licença MIT.</p>
-            <p class="mt-2">Feito para salvar seu tempo.</p>
-        </div>
-    </footer>
-
-    <!-- JavaScript Logic -->
-    <script>
-        // --- DATA STORE ---
-        const presets = {
+        const initialPresetsData = {
             vite: {
-                name: "Vite",
-                icon: "⚡",
-                desc: "Otimizado para bundlers modernos. Usa 'moduleResolution: bundler', ideal para React, Vue e Svelte. Foca em compatibilidade com Browser e ignora tipos de Node globais para segurança.",
-                color: "rgba(234, 88, 12, 1)", // Orange
-                bg: "rgba(234, 88, 12, 0.2)",
-                stats: [95, 20, 90, 100, 80], // [Browser, Node, Strictness, Modernity, Specificity]
-                json: {
-                    compilerOptions: {
-                        target: "ES2020",
-                        useDefineForClassFields: true,
-                        lib: ["ES2020", "DOM", "DOM.Iterable"],
-                        module: "ESNext",
-                        skipLibCheck: true,
-                        moduleResolution: "bundler",
-                        allowImportingTsExtensions: true,
-                        resolveJsonModule: true,
-                        isolatedModules: true,
-                        noEmit: true,
-                        jsx: "react-jsx",
-                        strict: true
-                    },
-                    include: ["src"],
-                    references: [{ path: "./tsconfig.node.json" }]
+                title: "Vite / Bundlers", icon: <IconGlobe />, desc: "React, Vue, Svelte modernos.",
+                config: {
+                    target: { val: "ES2020", explain: "Navegadores modernos suportam ES2020." },
+                    moduleResolution: { val: "bundler", explain: "O NOVO PADRÃO para bundlers." },
+                    isolatedModules: { val: true, explain: "Obrigatório para o Vite." },
+                    noEmit: { val: true, explain: "Vite gera o bundle, não o tsc." },
+                    lib: { val: ["ES2020", "DOM"], explain: "APIs do navegador + JS moderno." }
                 }
             },
             node: {
-                name: "Node",
-                icon: "📦",
-                desc: "Configuração robusta para Backends. Usa 'NodeNext' para suporte total a ESM e CommonJS simultaneamente. Habilita checagens estritas e output para pasta dist.",
-                color: "rgba(37, 99, 235, 1)", // Blue
-                bg: "rgba(37, 99, 235, 0.2)",
-                stats: [10, 100, 95, 90, 60],
-                json: {
-                    compilerOptions: {
-                        target: "ES2022",
-                        module: "NodeNext",
-                        moduleResolution: "NodeNext",
-                        lib: ["ES2022"],
-                        outDir: "./dist",
-                        rootDir: "./src",
-                        strict: true,
-                        noImplicitAny: true,
-                        esModuleInterop: true
-                    },
-                    include: ["src/**/*"],
-                    exclude: ["node_modules"]
+                title: "Node.js Moderno", icon: <IconCpu />, desc: "Backends e Scripts (Node 18+).",
+                config: {
+                    module: { val: "NodeNext", explain: "ESM + CommonJS nativo." },
+                    outDir: { val: "./dist", explain: "Saída compilada." },
+                    strict: { val: true, explain: "Máxima segurança de tipos." },
+                    sourceMap: { val: true, explain: "Debug direto no VS Code." }
                 }
             },
             next: {
-                name: "Next",
-                icon: "🛠️",
-                desc: "O padrão chato e específico do Next.js. Preserva JSX para o SWC compilar, habilita plugins do framework e incremental builds para velocidade.",
-                color: "rgba(147, 51, 234, 1)", // Purple
-                bg: "rgba(147, 51, 234, 0.2)",
-                stats: [80, 80, 85, 85, 100],
-                json: {
-                    compilerOptions: {
-                        target: "es5",
-                        lib: ["dom", "dom.iterable", "esnext"],
-                        allowJs: true,
-                        skipLibCheck: true,
-                        strict: true,
-                        noEmit: true,
-                        esModuleInterop: true,
-                        module: "esnext",
-                        moduleResolution: "node",
-                        resolveJsonModule: true,
-                        isolatedModules: true,
-                        jsx: "preserve",
-                        incremental: true,
-                        plugins: [{ name: "next" }]
-                    },
-                    include: ["next-env.d.ts", "**/*.ts", "**/*.tsx"],
-                    exclude: ["node_modules"]
+                title: "Next.js", icon: <IconLayers />, desc: "Padrão do framework Next.js.",
+                config: {
+                    jsx: { val: "preserve", explain: "Next.js compila o JSX." },
+                    allowJs: { val: true, explain: "Permite arquivos JS." },
+                    incremental: { val: true, explain: "Builds rápidos com cache." },
+                    plugins: { val: [{name: "next"}], explain: "Intellisense do Next." }
                 }
             }
         };
 
-        // --- STATE ---
-        let currentPreset = 'vite';
-        let isGlobal = false;
-        let radarChart = null;
+        const App = () => {
+            const [activePreset, setActivePreset] = useState('vite');
+            const [hoveredKey, setHoveredKey] = useState(null);
+            const [copied, setCopied] = useState(false);
+            const [codeCopied, setCodeCopied] = useState(false);
+            const [experimental, setExperimental] = useState(false);
+            const [displayConfig, setDisplayConfig] = useState(initialPresetsData);
 
-        // --- DOM ELEMENTS ---
-        const btnContainer = document.getElementById('presetButtons');
-        const codePreview = document.getElementById('codePreview');
-        const descEl = document.getElementById('presetDescription');
-        const finalCmdEl = document.getElementById('finalCommand');
-        const cmdLabelEl = document.getElementById('cmdLabel');
-        const btnNpx = document.getElementById('btnNpx');
-        const btnGlobal = document.getElementById('btnGlobal');
-
-        // --- INITIALIZATION ---
-        function init() {
-            renderButtons();
-            initChart();
-            updateUI();
-
-            // Setup Command Toggle Listeners
-            btnNpx.addEventListener('click', () => {
-                isGlobal = false;
-                btnNpx.className = "px-4 py-2 rounded-md text-sm font-bold transition active-tab";
-                btnGlobal.className = "px-4 py-2 rounded-md text-sm font-bold transition inactive-tab";
-                updateCommand();
-            });
-
-            btnGlobal.addEventListener('click', () => {
-                isGlobal = true;
-                btnGlobal.className = "px-4 py-2 rounded-md text-sm font-bold transition active-tab";
-                btnNpx.className = "px-4 py-2 rounded-md text-sm font-bold transition inactive-tab";
-                updateCommand();
-            });
-        }
-
-        // --- CHART LOGIC ---
-        function initChart() {
-            const ctx = document.getElementById('configRadarChart').getContext('2d');
-            radarChart = new Chart(ctx, {
-                type: 'radar',
-                data: {
-                    labels: ['Browser Compat', 'Node Compat', 'Estrito (Strict)', 'Modernidade', 'Especificidade'],
-                    datasets: [{
-                        label: 'Perfil do Preset',
-                        data: presets[currentPreset].stats,
-                        fill: true,
-                        backgroundColor: presets[currentPreset].bg,
-                        borderColor: presets[currentPreset].color,
-                        pointBackgroundColor: presets[currentPreset].color,
-                        pointBorderColor: '#fff',
-                        pointHoverBackgroundColor: '#fff',
-                        pointHoverBorderColor: presets[currentPreset].color
-                    }]
-                },
-                options: {
-                    responsive: true,
-                    maintainAspectRatio: false, // Critical for container responsiveness
-                    elements: {
-                        line: { borderWidth: 3 }
-                    },
-                    scales: {
-                        r: {
-                            angleLines: { color: '#e7e5e4' },
-                            grid: { color: '#e7e5e4' },
-                            pointLabels: {
-                                font: { size: 11, family: 'Inter' },
-                                color: '#57534e'
-                            },
-                            suggestedMin: 0,
-                            suggestedMax: 100,
-                            ticks: { display: false } // Hide numbers for cleaner look
-                        }
-                    },
-                    plugins: {
-                        legend: { display: false },
-                        tooltip: {
-                            backgroundColor: '#1c1917',
-                            titleFont: { family: 'Inter' },
-                            bodyFont: { family: 'Inter' }
-                        }
-                    }
+            // Atualiza o JSON exibido quando o switch "experimental" muda
+            useEffect(() => {
+                // CORREÇÃO: Evitamos usar JSON.stringify em todo o objeto porque ele remove os ícones (elementos React)
+                // Fazemos uma cópia rasa do preset e cópia profunda apenas da config
+                const newData = {};
+                Object.keys(initialPresetsData).forEach(key => {
+                    newData[key] = {
+                        ...initialPresetsData[key], // Preserva o ícone e título originais
+                        config: JSON.parse(JSON.stringify(initialPresetsData[key].config)) // Clona apenas a config
+                    };
+                });
+                
+                if (experimental) {
+                    Object.keys(newData).forEach(key => {
+                        newData[key].config.experimentalDecorators = { 
+                            val: true, 
+                            explain: "Permite o uso de decorators (@Decorator) usados em NestJS, TypeORM, etc." 
+                        };
+                        newData[key].config.emitDecoratorMetadata = { 
+                            val: true, 
+                            explain: "Emite metadados de tipo para decorators. Essencial para injeção de dependência." 
+                        };
+                    });
                 }
-            });
-        }
+                setDisplayConfig(newData);
+            }, [experimental]);
 
-        // --- UI UPDATE LOGIC ---
-        function renderButtons() {
-            btnContainer.innerHTML = '';
-            Object.keys(presets).forEach(key => {
-                const p = presets[key];
-                const btn = document.createElement('button');
-                btn.className = `w-full text-left px-4 py-3 rounded-lg border transition flex items-center gap-3 ${
-                    key === currentPreset 
-                    ? 'border-orange-500 bg-orange-50 text-orange-900 ring-1 ring-orange-500' 
-                    : 'border-stone-200 bg-white text-stone-600 hover:bg-stone-50 hover:border-stone-300'
-                }`;
-                btn.onclick = () => setPreset(key);
-                btn.innerHTML = `
-                    <span class="text-xl">${p.icon}</span>
-                    <div>
-                        <div class="font-bold">${p.name}</div>
-                        <div class="text-xs opacity-70">Preset</div>
-                    </div>
-                `;
-                btnContainer.appendChild(btn);
-            });
-        }
+            const copyCommand = () => {
+                let cmd = "npx mytsfy " + activePreset;
+                if (experimental) cmd += " --experimental";
+                navigator.clipboard.writeText(cmd);
+                setCopied(true);
+                setTimeout(() => setCopied(false), 2000);
+            };
 
-        function setPreset(key) {
-            currentPreset = key;
-            renderButtons();
-            updateUI();
-        }
+            const getCleanJSON = () => {
+                const configObj = {};
+                Object.entries(displayConfig[activePreset].config).forEach(([key, item]) => configObj[key] = item.val);
+                return JSON.stringify({ compilerOptions: configObj }, null, 2);
+            };
 
-        function updateUI() {
-            const data = presets[currentPreset];
-            
-            // Update Description
-            descEl.textContent = data.desc;
+            const downloadConfig = () => {
+                const a = document.createElement('a');
+                a.href = URL.createObjectURL(new Blob([getCleanJSON()], { type: 'application/json' }));
+                a.download = 'tsconfig.json';
+                a.click();
+            };
 
-            // Update Code Block with syntax highlighting simulation (simple JSON)
-            codePreview.textContent = JSON.stringify(data.json, null, 2);
-
-            // Update Chart
-            radarChart.data.datasets[0].data = data.stats;
-            radarChart.data.datasets[0].label = `Perfil ${data.name}`;
-            radarChart.data.datasets[0].backgroundColor = data.bg;
-            radarChart.data.datasets[0].borderColor = data.color;
-            radarChart.data.datasets[0].pointBackgroundColor = data.color;
-            radarChart.data.datasets[0].pointHoverBorderColor = data.color;
-            radarChart.update();
-
-            updateCommand();
-        }
-
-        function updateCommand() {
-            if (isGlobal) {
-                cmdLabelEl.textContent = "# Com pacote global instalado:";
-                finalCmdEl.textContent = `mytsfy ${currentPreset}`;
-            } else {
-                cmdLabelEl.textContent = "# Rode sem instalar nada:";
-                finalCmdEl.textContent = `npx mytsfy ${currentPreset}`;
+            const copyJSON = () => {
+                 navigator.clipboard.writeText(getCleanJSON());
+                 setCodeCopied(true);
+                 setTimeout(() => setCodeCopied(false), 2000);
             }
-        }
 
-        function copyCommand() {
-            const text = finalCmdEl.textContent;
-            navigator.clipboard.writeText(text).then(() => {
-                const original = finalCmdEl.textContent;
-                finalCmdEl.textContent = "Copiado! ✅";
-                setTimeout(() => {
-                    finalCmdEl.textContent = original;
-                }, 1500);
-            });
-        }
+            return (
+                <div className="min-h-screen flex flex-col items-center pb-20">
+                    <header className="w-full max-w-5xl mx-auto px-6 py-12 md:py-20 text-center">
+                        <div className="inline-flex items-center justify-center p-3 bg-blue-500/10 rounded-full mb-6 border border-blue-500/20">
+                            <span className="text-blue-300 font-mono text-sm md:text-base">npm install -g mytsfy</span>
+                        </div>
+                        <h1 className="text-4xl md:text-7xl font-extrabold tracking-tight mb-6 bg-gradient-to-r from-blue-400 to-purple-500 bg-clip-text text-transparent">MyTSFy</h1>
+                        <p className="text-lg md:text-xl text-slate-400 max-w-2xl mx-auto mb-8 leading-relaxed">Chega de copiar <code>tsconfig.json</code> velho do StackOverflow. Configs modernas em 1 segundo.</p>
+                        
+                        {/* EXPERIMENTAL TOGGLE */}
+                        <div className="flex justify-center mb-10">
+                            <div className="flex items-center bg-slate-800 p-3 rounded-lg border border-slate-700 shadow-sm">
+                                <div className="mr-3 text-purple-400"><IconBeaker /></div>
+                                <div className="mr-4 text-left">
+                                    <p className="text-sm font-bold text-slate-200">Experimental Decorators</p>
+                                    <p className="text-xs text-slate-500">Útil para NestJS / TypeORM</p>
+                                </div>
+                                <div className="relative inline-block w-10 mr-2 align-middle select-none transition duration-200 ease-in">
+                                    <input type="checkbox" name="toggle" id="toggle" className="toggle-checkbox absolute block w-6 h-6 rounded-full bg-white border-4 appearance-none cursor-pointer" checked={experimental} onChange={() => setExperimental(!experimental)}/>
+                                    <label htmlFor="toggle" className={`toggle-label block overflow-hidden h-6 rounded-full cursor-pointer ${experimental ? 'bg-blue-600' : 'bg-slate-600'}`}></label>
+                                </div>
+                            </div>
+                        </div>
 
-        // Run
-        window.onload = init;
-
+                        <div className="flex flex-col sm:flex-row justify-center gap-4">
+                            <button onClick={copyCommand} className="bg-blue-600 hover:bg-blue-500 text-white px-8 py-4 rounded-lg font-bold transition flex items-center justify-center gap-2 text-lg shadow-lg shadow-blue-900/20"><IconCopy /> {copied ? "Copiado!" : `Copiar Comando`}</button>
+                            <a href="#explorer" className="bg-slate-800 hover:bg-slate-700 text-white px-8 py-4 rounded-lg font-bold transition border border-slate-700 flex items-center justify-center">Ver Configs</a>
+                        </div>
+                        {experimental && <p className="mt-4 font-mono text-purple-400 text-sm animate-pulse">Flag --experimental adicionada ao comando!</p>}
+                    </header>
+                    
+                    <section id="explorer" className="w-full max-w-6xl mx-auto px-6 py-16 border-t border-slate-800">
+                        <h2 className="text-2xl md:text-3xl font-bold mb-8 text-center">Entenda suas Configs</h2>
+                        <div className="grid lg:grid-cols-12 gap-6">
+                            <div className="lg:col-span-3 flex flex-row lg:flex-col gap-2 overflow-x-auto lg:overflow-visible pb-4 lg:pb-0">
+                                {Object.entries(displayConfig).map(([key, data]) => (
+                                    <button key={key} onClick={() => setActivePreset(key)} className={`p-4 rounded-xl text-left transition-all border whitespace-nowrap lg:whitespace-normal flex-1 lg:flex-none ${activePreset === key ? 'bg-blue-600/20 border-blue-500 text-white' : 'bg-slate-800 border-slate-700 text-slate-400 hover:bg-slate-700'}`}>
+                                        <div className="flex items-center gap-3 font-bold mb-1">{data.icon}{data.title}</div>
+                                        <p className="text-xs opacity-70 hidden lg:block">{data.desc}</p>
+                                    </button>
+                                ))}
+                            </div>
+                            <div className="lg:col-span-5 min-h-[300px]">
+                                <div className="bg-slate-900 rounded-xl border border-slate-700 p-6 h-full font-mono text-sm shadow-2xl relative group overflow-hidden">
+                                    <div className="flex justify-between items-center mb-4">
+                                        <div className="text-slate-500 text-xs select-none">tsconfig.json</div>
+                                        <div className="flex gap-2">
+                                            <button onClick={copyJSON} className="text-xs flex items-center gap-1 bg-slate-800 hover:bg-slate-700 text-slate-300 px-2 py-1 rounded transition border border-slate-700"><IconClipboard /> {codeCopied ? "Copiado!" : "Copiar JSON"}</button>
+                                            <button onClick={downloadConfig} className="text-xs flex items-center gap-1 bg-blue-600/20 hover:bg-blue-600/30 text-blue-400 px-2 py-1 rounded transition border border-blue-500/30"><IconDownload /> Baixar</button>
+                                        </div>
+                                    </div>
+                                    <pre className="overflow-auto h-full code-font custom-scroll pb-10">
+                                        <span className="text-slate-500">{'{'}</span><br/><span className="text-slate-500 ml-4">"compilerOptions": {'{'}</span><br/>
+                                        {Object.entries(displayConfig[activePreset].config).map(([key, item]) => (
+                                            <div key={key} className={`ml-8 cursor-help py-0.5 rounded px-1 transition-colors ${hoveredKey === key ? 'bg-blue-900/50 ring-1 ring-blue-500/50' : 'hover:bg-slate-800'}`} onMouseEnter={() => setHoveredKey(key)} onMouseLeave={() => setHoveredKey(null)} onClick={() => setHoveredKey(key)}>
+                                                <span className="json-key">"{key}"</span>: <span className={typeof item.val === 'string' ? 'json-string' : 'json-bool'}>{JSON.stringify(item.val)}</span>,
+                                            </div>
+                                        ))}<span className="text-slate-500 ml-4">{'}'}</span><br/><span className="text-slate-500">{'}'}</span>
+                                    </pre>
+                                </div>
+                            </div>
+                            <div className="lg:col-span-4 min-h-[200px]">
+                                <div className="bg-slate-800 border border-slate-700 rounded-xl p-6 h-full flex flex-col justify-center transition-all duration-300">
+                                    {hoveredKey ? (
+                                        <div>
+                                            <div className="text-blue-400 font-mono text-sm mb-2 font-bold bg-blue-900/30 inline-block px-2 py-1 rounded">"{hoveredKey}"</div>
+                                            <p className="text-base md:text-lg text-slate-200 leading-relaxed">{displayConfig[activePreset].config[hoveredKey].explain}</p>
+                                        </div>
+                                    ) : (
+                                        <div className="text-center text-slate-500"><p className="text-sm">Toque ou passe o mouse nas propriedades JSON para ver a explicação mágica.</p></div>
+                                    )}
+                                </div>
+                            </div>
+                        </div>
+                    </section>
+                </div>
+            );
+        };
+        const root = ReactDOM.createRoot(document.getElementById('root'));
+        root.render(<App />);
     </script>
 </body>
 </html>
