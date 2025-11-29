@@ -1,6 +1,6 @@
 <p align="center">
-  <h1 align="center">⚡ MyTSFy</h1>
-  <p align="center"><strong>Pare de copiar e colar configs velhas do StackOverflow.</strong></p>
+<img src="https://i.imgur.com/BS0L1m8.png" align="center" width=600 />
+  <h2 align="center"><strong>Pare de copiar e colar configs velhas do StackOverflow ou corrigindo configs erradas geradas pela IA.</strong></h2>
   <p align="center">O MyTSFy gera arquivos <code>tsconfig.json</code> modernos e otimizados para as stacks atuais (Vite, Next.js, Node 20+).</p>
 </p>
 
